@@ -48,7 +48,7 @@
     }
     .checkout-item-img img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* Стили кнопок управления количеством */
+    /* Стили кнопок количества */
     .quantity-control-wrapper {
         display: flex;
         align-items: center;
@@ -69,9 +69,7 @@
         line-height: 1;
         user-select: none;
     }
-    .btn-qty:hover {
-        color: #8A847B;
-    }
+    .btn-qty:hover { color: #8A847B; }
     .qty-num {
         font-size: 0.85rem;
         font-weight: 500;
@@ -176,58 +174,34 @@
     .btn-submit-order:hover { background-color: #2D2D2D; color: #FFFFFF; }
     .privacy-notice { font-size: 0.7rem; color: #8A847B; text-align: center; margin-top: 12px; }
 
-    /* ЭСТЕТИЧНЫЕ СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА В СТИЛЕ KÓTI */
+    /* Эстетичные стили модалки */
     .koti-modal .modal-content {
         background-color: #FAF6F0;
         border: 1px solid #EFEBE4;
         border-radius: 24px;
         padding: 15px;
     }
-    .koti-modal .modal-header {
-        border-bottom: none;
-        padding-bottom: 5px;
-    }
-    .koti-modal .modal-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.4rem;
-        color: #2D2D2D;
-    }
-    .koti-modal .modal-body {
-        font-size: 0.95rem;
-        color: #5A544B;
-        padding-top: 5px;
-        padding-bottom: 20px;
-    }
-    .koti-modal .modal-footer {
-        border-top: none;
-        gap: 10px;
-        padding-top: 0;
-    }
-    .btn-koti-secondary {
-        background-color: #FFFFFF;
-        color: #8A847B;
-        border: 1px solid #D0C9BE;
-        border-radius: 20px;
-        padding: 8px 20px;
-        font-size: 0.85rem;
-        transition: all 0.2s;
-    }
-    .btn-koti-secondary:hover {
-        background-color: #EFEBE4;
-        color: #2D2D2D;
-    }
-    .btn-koti-danger {
-        background-color: #2D2D2D;
-        color: #FFFFFF;
-        border: 1px solid #2D2D2D;
-        border-radius: 20px;
-        padding: 8px 20px;
-        font-size: 0.85rem;
-        transition: all 0.2s;
-    }
-    .btn-koti-danger:hover {
-        background-color: #4A4A4A;
-        border-color: #4A4A4A;
+    .koti-modal .modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #2D2D2D; }
+    .btn-koti-secondary { background-color: #FFFFFF; color: #8A847B; border: 1px solid #D0C9BE; border-radius: 20px; padding: 8px 20px; font-size: 0.85rem; }
+    .btn-koti-danger { background-color: #2D2D2D; color: #FFFFFF; border: none; border-radius: 20px; padding: 8px 20px; font-size: 0.85rem; }
+
+    /* ==============================================================================
+    МОБИЛЬНАЯ ОПТИМИЗАЦИЯ ДЛЯ ЧЕКАУТА
+    ============================================================================== */
+    @media (max-width: 576px) {
+        .delivery-selector-grid {
+            grid-template-columns: 1fr; /* Плитки доставки на мобилках встают в столбик */
+            gap: 10px;
+        }
+        .checkout-title {
+            font-size: 1.8rem;
+        }
+        .checkout-form-box, .order-summary-box {
+            padding: 20px;
+        }
+        .total-price-val {
+            font-size: 1.8rem;
+        }
     }
 </style>
 
@@ -256,7 +230,7 @@
 
                 <div id="checkoutItemsList">
                     {% for item in cart %}
-                    <div class="checkout-item-row" id="item-row-{{ item.product.id }}" data-price="{{ item.product.price }}">
+                    <div class="checkout-item-row" id="item-row-{{ item.product.id }}" data-price="{{ item.product.price|stringformat:".2f" }}">
                         <div class="checkout-item-img">
                             {% if item.product.image %}
                                 <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
@@ -355,14 +329,14 @@
 <div class="modal fade koti-modal" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
         <div class="modal-content shadow">
-            <div class="modal-header">
+            <div class="modal-header border-0 pb-1">
                 <h5 class="modal-title">Удалить товар?</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.8rem;"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body text-muted" style="font-size: 0.95rem;">
                 Вы действительно хотите убрать этот товар из вашего заказа?
             </div>
-            <div class="modal-footer justify-content-end">
+            <div class="modal-footer border-0 pt-0 justify-content-end" style="gap: 10px;">
                 <button type="button" class="btn-koti-secondary" data-bs-dismiss="modal">Отмена</button>
                 <button type="button" class="btn-koti-danger" id="confirmDeleteBtn">Удалить</button>
             </div>
@@ -372,7 +346,7 @@
 
 <script>
     let globalCartTotal = parseFloat("{{ cart.get_total_price }}");
-    let productIdToDelete = null; // Будет временно хранить ID товара при открытии окна
+    let productIdToDelete = null;
 
     function changeQty(productId, delta) {
         const qtyElement = document.getElementById(`qty-val-${productId}`);
@@ -381,7 +355,6 @@
         let currentQty = parseInt(qtyElement.innerText);
         let newQty = currentQty + delta;
 
-        // Вместо confirm() открываем красивую модалку Bootstrap
         if (newQty < 1) {
             productIdToDelete = productId;
             const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
@@ -408,9 +381,10 @@
                 qtyElement.innerText = newQty;
 
                 const itemRow = document.getElementById(`item-row-${productId}`);
-                const singlePrice = parseFloat(itemRow.getAttribute('data-price'));
-                const newItemTotal = singlePrice * newQty;
+                const rawPrice = itemRow.getAttribute('data-price').replace(',', '.');
+                const singlePrice = parseFloat(rawPrice);
 
+                const newItemTotal = singlePrice * newQty;
                 document.getElementById(`item-total-${productId}`).innerText = newItemTotal.toFixed(2);
 
                 globalCartTotal = parseFloat(data.cart_total_price);
@@ -420,7 +394,6 @@
         .catch(err => console.error("Ошибка:", err));
     }
 
-    // Слушатель клика на кнопку «Удалить» внутри модального окна
     document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
         if (!productIdToDelete) return;
 
@@ -435,7 +408,6 @@
                 globalCartTotal = parseFloat(data.cart_total_price);
                 recalculateFullTotal();
 
-                // Закрываем модальное окно
                 const modalInstance = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
                 modalInstance.hide();
 
@@ -444,7 +416,7 @@
                 }
             }
         })
-        .catch(err => console.error("Ошибка при удалении:", err));
+        .catch(err => console.error("Ошибка:", err));
     });
 
     function recalculateFullTotal() {

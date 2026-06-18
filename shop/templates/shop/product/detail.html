@@ -1,139 +1,260 @@
 {% extends "shop/base.html" %}
 {% load static %}
 
-{% block title %}{{ product.name }} — {{ header_settings.site_name|default:"KÓTI" }}{% endblock %}
+{% block title %}Ваша корзина — KÓTI{% endblock %}
 
 {% block content %}
 <style>
-    /* Аккуратный журнальный масштаб карточки */
-    .detail-container {
+    .cart-detail-container {
         background-color: #FFFFFF;
         border-radius: 24px;
         padding: 40px;
         margin-top: 20px;
+        border: 1px solid #EFEBE4;
     }
-    .product-detail-img-box {
-        max-width: 440px; /* Фиксированное аккуратное уменьшение фото */
-        width: 100%;
-        aspect-ratio: 1 / 1;
-        border-radius: 16px;
-        overflow: hidden;
+    .cart-page-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        color: #2D2D2D;
+    }
+    .cart-summary-text {
+        font-size: 0.95rem;
+        color: #8A847B;
+    }
+    .cart-item-row {
+        display: flex;
+        align-items: center;
+        padding: 25px 0;
+        border-bottom: 1px solid #EFEBE4;
+    }
+    .cart-item-img {
+        width: 100px;
+        height: 100px;
         background-color: #EFEBE4;
+        border-radius: 12px;
+        overflow: hidden;
     }
-    .product-detail-img-box img {
+    .cart-item-img img {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
-    .breadcrumb-item a {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+    .quantity-control-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background-color: #F8F5F0;
+        border: 1px solid #D0C9BE;
+        border-radius: 20px;
+        padding: 4px 12px;
+    }
+    .btn-qty {
+        background: none;
+        border: none;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2D2D2D;
+        cursor: pointer;
+        padding: 0 4px;
+        line-height: 1;
+        user-select: none;
+    }
+    .btn-qty:hover { color: #8A847B; }
+    .qty-num {
+        font-size: 0.9rem;
         font-weight: 500;
+        min-width: 20px;
+        text-align: center;
     }
+    .btn-cart-remove {
+        background-color: #5A544B;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 20px;
+        padding: 6px 20px;
+        font-size: 0.85rem;
+        transition: background-color 0.2s;
+    }
+    .btn-cart-remove:hover { background-color: #2D2D2D; }
 
-    /* Стили сопутствующих товаров */
-    .lumora-product-card {
-        border: none !important;
-        background: transparent !important;
-        position: relative;
+    /* Стили модалки */
+    .koti-modal .modal-content {
+        background-color: #FAF6F0;
+        border: 1px solid #EFEBE4;
+        border-radius: 24px;
+        padding: 15px;
     }
-    .lumora-img-box {
-        width: 100%; aspect-ratio: 1 / 1;
-        background-color: #EFEBE4; border-radius: 16px;
-        overflow: hidden; position: relative;
-    }
-    .lumora-img-box img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
-    .lumora-product-card:hover .lumora-img-box img { transform: scale(1.03); }
+    .koti-modal .modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; }
+    .btn-koti-secondary { background-color: #FFFFFF; color: #8A847B; border: 1px solid #D0C9BE; border-radius: 20px; padding: 8px 20px; font-size: 0.85rem; }
+    .btn-koti-danger { background-color: #2D2D2D; color: #FFFFFF; border: none; border-radius: 20px; padding: 8px 20px; font-size: 0.85rem; }
 </style>
 
-<div class="detail-container shadow-sm">
-    <div class="row g-5 justify-content-center align-items-center">
-        <div class="col-md-5 d-flex justify-content-center">
-            <div class="product-detail-img-box">
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" style="object-position: center {{ product.image_position }}%;">
+<div class="cart-detail-container shadow-sm">
+    <div class="d-flex justify-content-between align-items-baseline mb-4">
+        <h1 class="cart-page-title">Корзина</h1>
+        <div class="cart-summary-text">
+            <span id="topCartCount">{{ cart|length }}</span> товара на сумму
+            <span id="topCartTotal">{{ cart.get_total_price }}</span> руб.
+        </div>
+    </div>
+
+    {% csrf_token %}
+
+    <div id="cartItemsContainer">
+        {% for item in cart %}
+        <div class="cart-item-row" id="item-row-{{ item.product.id }}" data-price="{{ item.product.price }}">
+            <!-- Фото -->
+            <div class="cart-item-img me-4">
+                {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
                 {% else %}
                     <img src="{% static 'img/no_image.png' %}" alt="No image">
                 {% endif %}
             </div>
-        </div>
 
-        <div class="col-md-6">
-            <nav aria-label="breadcrumb" class="mb-3">
-                <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="{% url 'shop:product_list' %}" class="text-muted text-decoration-none">Главная</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'shop:product_list_by_category' product.category.slug %}" class="text-muted text-decoration-none">{{ product.category.name }}</a></li>
-                </ol>
-            </nav>
-
-            <h1 class="mb-2" style="font-size: 2rem; font-weight: 500; color: #1E3F35;">{{ product.name }}</h1>
-
-            <div class="mb-4">
-                <span style="font-size: 1.4rem; font-weight: 600; color: #1E3F35;">{{ product.price }} руб.</span>
+            <!-- Описание -->
+            <div class="flex-grow-1">
+                <h5 class="mb-1" style="font-size: 1.05rem; font-weight: 500; color: #2D2D2D;">{{ item.product.name }}</h5>
+                <div style="font-size: 0.85rem; color: #8A847B;">{{ item.product.price }} руб.</div>
             </div>
 
-            <div class="mb-4">
-                <h6 class="text-uppercase small fw-bold text-muted mb-2" style="letter-spacing: 0.5px;">Описание</h6>
-                <div style="font-size: 0.9rem; color: #5A544B; line-height: 1.6;">
-                    {{ product.description|linebreaks }}
+            <!-- Управление количеством -->
+            <div class="me-5">
+                <div class="quantity-control-wrapper">
+                    <button type="button" class="btn-qty" onclick="changeCartQty('{{ item.product.id }}', -1)">−</button>
+                    <span class="qty-num" id="qty-val-{{ item.product.id }}">{{ item.quantity }}</span>
+                    <button type="button" class="btn-qty" onclick="changeCartQty('{{ item.product.id }}', 1)">+</button>
                 </div>
             </div>
 
-            <form action="{% url 'shop:cart_add' product.id %}" method="post" class="cart-add-form mt-4">
-                {% csrf_token %}
-                <div class="d-flex align-items-center gap-3 mb-4">
-                    <span class="small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Кол-во:</span>
-                    <select name="quantity" class="form-select text-center" style="width: 75px; border-radius: 10px; background-color: #F8F5F0; border-color: #D0C9BE;">
-                        {% for i in "123456789"|make_list %}
-                            <option value="{{ i }}">{{ i }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+            <!-- Итоговая стоимость строки -->
+            <div class="me-5 text-end" style="min-width: 120px; font-size: 1.05rem; font-weight: 500; color: #2D2D2D;">
+                <span id="item-total-{{ item.product.id }}">{{ item.total_price }}</span> руб.
+            </div>
 
-                <button type="submit" class="btn btn-lg w-100 py-3 text-uppercase fw-bold text-white" style="background-color: #1E3F35; border-radius: 30px; font-size: 0.85rem; letter-spacing: 1px; border: none;">
-                    👜 Добавить в корзину
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
-{% if related_products %}
-<div class="mt-5 pt-4 mb-4">
-    <h3 class="mb-4" style="font-family: 'Playfair Display', serif; font-size: 1.6rem; color: #1E3F35;">Похожие товары</h3>
-
-    <div class="row row-cols-2 row-cols-md-5 g-3">
-        {% for rp in related_products %}
-        <div class="col">
-            <div class="card lumora-product-card h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="lumora-img-box">
-                        <a href="{% url 'shop:product_detail' rp.slug %}">
-                            {% if rp.image %}
-                                <img src="{{ rp.image.url }}" alt="{{ rp.name }}" style="object-position: center {{ rp.image_position }}%;">
-                            {% endif %}
-                        </a>
-                    </div>
-                    <div class="pt-2 px-1">
-                        <div style="font-size: 0.7rem; color: #8A847B; margin-bottom: 2px;">{{ rp.category.name }}</div>
-                        <div class="fw-semibold text-dark mb-1" style="font-size: 0.8rem; line-height: 1.2;">{{ rp.name }}</div>
-                        <div class="text-muted" style="font-size: 0.8rem;">{{ rp.price }} руб.</div>
-                    </div>
-                </div>
-                <div class="pt-2 px-1">
-                    <form action="{% url 'shop:cart_add' rp.id %}" method="post" class="m-0">
-                        {% csrf_token %}
-                        <input type="hidden" name="quantity" value="1">
-                        <button type="submit" class="btn btn-outline-secondary w-100 btn-sm rounded-pill py-1" style="font-size: 0.7rem;">
-                            + В корзину
-                        </button>
-                    </form>
-                </div>
+            <!-- Кнопка удаления -->
+            <div>
+                <button type="button" class="btn-cart-remove" onclick="triggerDelete('{{ item.product.id }}')">Удалить</button>
             </div>
         </div>
         {% endfor %}
     </div>
+
+    <!-- Кнопка перехода к оформлению -->
+    <div class="text-center mt-5">
+        <a href="{% url 'shop:order_create' %}" class="btn text-white px-5 py-3 text-uppercase fw-bold" style="background-color: #5A544B; border-radius: 30px; font-size: 0.85rem; letter-spacing: 1px;">
+            Оформить заказ
+        </a>
+    </div>
 </div>
-{% endif %}
+
+<!-- Красивое модальное окно удаления товара -->
+<div class="modal fade koti-modal" id="cartDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content shadow">
+            <div class="modal-header border-0 pb-1">
+                <h5 class="modal-title">Удалить товар?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.8rem;"></button>
+            </div>
+            <div class="modal-body text-muted" style="font-size: 0.95rem;">
+                Вы действительно хотите удалить этот товар из корзины?
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn-koti-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn-koti-danger" id="confirmCartDeleteBtn">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let productIdToDelete = null;
+
+    // 1. Функция изменения количества
+    function changeCartQty(productId, delta) {
+        const qtyElement = document.getElementById(`qty-val-${productId}`);
+        if (!qtyElement) return;
+
+        let currentQty = parseInt(qtyElement.innerText);
+        let newQty = currentQty + delta;
+
+        if (newQty < 1) {
+            triggerDelete(productId);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('quantity', newQty);
+        formData.append('override_quantity', 'true');
+        formData.append('is_ajax', 'true');
+
+        fetch(`/cart/add/${productId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                qtyElement.innerText = newQty;
+
+                // Исправленный расчет стоимости строки: берем data-price из строки
+                const itemRow = document.getElementById(`item-row-${productId}`);
+                const singlePrice = parseFloat(itemRow.getAttribute('data-price'));
+                const newItemTotal = singlePrice * newQty;
+
+                document.getElementById(`item-total-${productId}`).innerText = newItemTotal.toFixed(2);
+
+                // Обновляем общие итоги в шапке корзины
+                document.getElementById('topCartCount').innerText = data.cart_len;
+                document.getElementById('topCartTotal').innerText = parseFloat(data.cart_total_price).toFixed(2);
+
+                // Обновляем иконку корзины в глобальной шапке (если она есть)
+                const headerCartBadge = document.getElementById('cart-badge-count');
+                if (headerCartBadge) headerCartBadge.innerText = data.cart_len;
+            }
+        })
+        .catch(err => console.error("Ошибка:", err));
+    }
+
+    // 2. Вызов модалки удаления
+    function triggerDelete(productId) {
+        productIdToDelete = productId;
+        const modal = new bootstrap.Modal(document.getElementById('cartDeleteModal'));
+        modal.show();
+    }
+
+    // 3. Подтверждение удаления в модалке
+    document.getElementById('confirmCartDeleteBtn').addEventListener('click', function() {
+        if (!productIdToDelete) return;
+
+        fetch(`/cart/remove/${productIdToDelete}/`, {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById(`item-row-${productIdToDelete}`).remove();
+
+                document.getElementById('topCartCount').innerText = data.cart_len;
+                document.getElementById('topCartTotal').innerText = parseFloat(data.cart_total_price).toFixed(2);
+
+                const headerCartBadge = document.getElementById('cart-badge-count');
+                if (headerCartBadge) headerCartBadge.innerText = data.cart_len;
+
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('cartDeleteModal'));
+                modalInstance.hide();
+
+                if (parseInt(data.cart_len) === 0) {
+                    location.reload(); // Перезагрузит, чтобы показать пустую корзину
+                }
+            }
+        })
+        .catch(err => console.error("Ошибка:", err));
+    });
+</script>
 {% endblock %}

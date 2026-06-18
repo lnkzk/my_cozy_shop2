@@ -1,265 +1,321 @@
-{% extends 'shop/base.html' %}
+{% extends "shop/base.html" %}
+{% load static %}
 
-{% block title %}Корзина — KÓTI{% endblock %}
+{% block title %}Ваша корзина — {{ header_settings.site_name|default:"KÓTI" }}{% endblock %}
 
 {% block content %}
 <style>
-    .cart-breadcrumbs {
-        font-size: 0.75rem;
-        color: #8A847B;
-        margin-bottom: 25px;
-        letter-spacing: 0.5px;
-    }
-    .cart-breadcrumbs a {
-        color: #8A847B;
-        text-decoration: none;
-    }
-    .cart-header-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        border-bottom: 1px solid #2D2D2D;
-        padding-bottom: 15px;
-        margin-bottom: 10px;
-    }
-    .cart-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 2.4rem;
-        font-weight: 400;
-        margin: 0;
-    }
-    .cart-summary-text {
-        font-size: 1rem;
-        color: #2D2D2D;
-        font-weight: 500;
+    /* Внешняя прозрачная обертка */
+    .cart-page-wrapper {
+        background: transparent !important;
+        padding: 20px 0;
     }
 
-    /* Строки товаров по макету */
+    /* Белый журнальный островок */
+    .cart-detail-container {
+        background-color: #FFFFFF !important;
+        border-radius: 24px;
+        padding: 40px;
+    }
+    .cart-page-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        color: #2D2D2D;
+    }
+    .cart-summary-text {
+        font-size: 0.95rem;
+        color: #8A847B;
+    }
+
+    /* Разделительная полоса под заголовком */
+    .cart-title-divider {
+        border: none;
+        border-top: 1px solid #2D2D2D;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        opacity: 1;
+    }
+
     .cart-item-row {
-        display: grid;
-        grid-template-columns: 120px 2fr 1fr 1fr 1.2fr;
+        display: flex;
         align-items: center;
-        gap: 20px;
         padding: 25px 0;
         border-bottom: 1px solid #EFEBE4;
     }
-    @media (max-width: 768px) {
-        .cart-item-row {
-            grid-template-columns: 90px 1fr;
-            grid-template-rows: auto auto;
-            gap: 15px;
-        }
-        .cart-item-meta { grid-column: span 2; display: flex; justify-content: space-between; }
-    }
     .cart-item-img {
-        width: 120px;
-        aspect-ratio: 1 / 1;
+        width: 80px;
+        height: 80px;
         background-color: #EFEBE4;
-        border-radius: 12px;
+        border-radius: 16px;
         overflow: hidden;
     }
     .cart-item-img img {
-        width: 100%; height: 100%; object-fit: cover;
-    }
-    .cart-item-name {
-        font-size: 0.95rem;
-        font-weight: 500;
-        color: #1E1E1E;
-        margin-bottom: 5px;
-    }
-    .cart-item-price {
-        font-size: 0.9rem;
-        color: #8A847B;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
-    /* Счётчик количества */
-    .quantity-counter {
-        display: inline-flex;
+    /* Округлая плашка количества */
+    .quantity-control-wrapper {
+        display: flex;
         align-items: center;
-        background-color: transparent;
-        gap: 15px;
-        font-size: 0.9rem;
+        gap: 8px;
+        background-color: #F8F5F0;
+        border: 1px solid #D0C9BE;
+        border-radius: 20px;
+        padding: 4px 10px;
     }
-    .counter-btn {
+    .btn-qty {
         background: none;
         border: none;
+        font-size: 1rem;
+        font-weight: 600;
         color: #2D2D2D;
-        font-size: 1.1rem;
         cursor: pointer;
-        padding: 0 5px;
+        padding: 0 4px;
+        line-height: 1;
         user-select: none;
     }
-    .counter-value {
+    .btn-qty:hover { color: #8A847B; }
+    .qty-num {
+        font-size: 0.85rem;
         font-weight: 500;
-        min-width: 15px;
+        min-width: 16px;
         text-align: center;
     }
 
-    .item-total-display {
-        font-size: 0.95rem;
-        font-weight: 500;
-        color: #2D2D2D;
-    }
-
-    .btn-to-wishlist {
-        background-color: #5A5E5B;
-        color: #FFFFFF !important;
+    /* Кнопка удаления */
+    .btn-cart-remove {
+        background-color: #5A544B;
+        color: #FFFFFF;
         border: none;
         border-radius: 20px;
-        font-size: 0.75rem;
-        padding: 8px 20px;
-        text-decoration: none;
-        transition: opacity 0.2s;
-        display: inline-block;
-        text-align: center;
-        width: fit-content;
-        justify-self: end;
-    }
-    .btn-to-wishlist:hover {
-        opacity: 0.9;
-    }
-
-    /* Центральная кнопка внизу */
-    .cart-checkout-box {
-        display: flex;
-        justify-content: center;
-        margin-top: 50px;
-        margin-bottom: 30px;
-    }
-    .btn-koti-checkout {
-        background-color: #5A5E5B;
-        color: #FFFFFF !important;
-        border: none;
-        border-radius: 25px;
-        font-size: 0.9rem;
-        padding: 12px 50px;
-        text-decoration: none;
-        letter-spacing: 0.5px;
+        padding: 6px 20px;
+        font-size: 0.85rem;
         transition: background-color 0.2s;
     }
-    .btn-koti-checkout:hover {
-        background-color: #444845;
+    .btn-cart-remove:hover { background-color: #2D2D2D; }
+
+    /* Красивая модалка */
+    .koti-modal .modal-content {
+        background-color: #FAF6F0;
+        border: 1px solid #EFEBE4;
+        border-radius: 24px;
+        padding: 15px;
+    }
+    .koti-modal .modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #2D2D2D; }
+    .btn-koti-secondary { background-color: #FFFFFF; color: #8A847B; border: 1px solid #D0C9BE; border-radius: 20px; padding: 8px 20px; font-size: 0.85rem; }
+    .btn-koti-danger { background-color: #2D2D2D; color: #FFFFFF; border: none; border-radius: 20px; padding: 8px 20px; font-size: 0.85rem; }
+
+    /* ==============================================================================
+    МОБИЛЬНАЯ ОПТИМИЗАЦИЯ ДЛЯ КОРЗИНЫ (ЭКРАНЫ СМАРТФОНОВ)
+    ============================================================================== */
+    @media (max-width: 768px) {
+        .cart-detail-container {
+            padding: 20px;
+        }
+        .cart-page-title {
+            font-size: 1.6rem;
+        }
+        .cart-summary-text {
+            font-size: 0.85rem;
+        }
+        .cart-item-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 20px 0;
+            position: relative;
+        }
+        /* Разносим инфо-блоки по всей ширине строки смартфона */
+        .cart-item-row > div:not(.cart-item-img):not(.flex-grow-1) {
+            margin: 2px 0 !important;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        /* Добавляем текстовые метки на мобилках для понятности */
+        .cart-item-row > div:nth-last-child(2)::before {
+            content: "Стоимость:";
+            font-size: 0.85rem;
+            color: #8A847B;
+            font-weight: 400;
+        }
+        .btn-cart-remove {
+            width: 100%;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 5px !important;
+        }
     }
 </style>
 
-<div class="container p-0 my-3">
-    <div class="cart-breadcrumbs">
-        <a href="{% url 'shop:product_list' %}">Главная</a> /
-        <a href="{% url 'shop:catalog_view' %}">Каталог</a> /
-        <span>Корзина</span>
-    </div>
+<div class="cart-page-wrapper">
+    <div class="cart-detail-container shadow-sm">
 
-    <div class="cart-header-row">
-        <h1 class="cart-title">Корзина</h1>
-        <div class="cart-summary-text" id="topCartSummary">
-            {{ cart|length }} товара на сумму <span id="totalCartPrice">{{ cart.get_total_price }}</span> руб.
+        <div class="cart-breadcrumbs mb-3 text-muted small" style="font-size: 0.8rem;">
+            <a href="{% url 'shop:product_list' %}" class="text-muted text-decoration-none">Главная</a> /
+            <a href="{% url 'shop:catalog_view' %}" class="text-muted text-decoration-none">Каталог</a> /
+            <span>Корзина</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-baseline">
+            <h1 class="cart-page-title">Корзина</h1>
+            <div class="cart-summary-text">
+                <span id="topCartCount">{{ cart|length }}</span> товара на сумму
+                <span id="topCartTotal">{{ cart.get_total_price }}</span> руб.
+            </div>
+        </div>
+
+        <hr class="cart-title-divider">
+
+        {% csrf_token %}
+
+        <div id="cartItemsContainer">
+            {% for item in cart %}
+            <div class="cart-item-row" id="item-row-{{ item.product.id }}" data-price="{{ item.product.price|stringformat:".2f" }}">
+                <div class="cart-item-img me-4">
+                    {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                    {% else %}
+                        <img src="{% static 'img/no_image.png' %}" alt="No image">
+                    {% endif %}
+                </div>
+
+                <div class="flex-grow-1">
+                    <h5 class="mb-1" style="font-size: 1.05rem; font-weight: 400; color: #2D2D2D;">{{ item.product.name }}</h5>
+                    <div style="font-size: 0.85rem; color: #8A847B;">{{ item.product.price }} руб.</div>
+                </div>
+
+                <div class="me-5">
+                    <div class="quantity-control-wrapper">
+                        <button type="button" class="btn-qty" onclick="changeCartQty('{{ item.product.id }}', -1)">−</button>
+                        <span class="qty-num" id="qty-val-{{ item.product.id }}">{{ item.quantity }}</span>
+                        <button type="button" class="btn-qty" onclick="changeCartQty('{{ item.product.id }}', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="me-5 text-end" style="min-width: 100px; font-size: 1.05rem; font-weight: 500; color: #2D2D2D;">
+                    <span id="item-total-{{ item.product.id }}">{{ item.total_price }}</span> руб.
+                </div>
+
+                <div>
+                    <button type="button" class="btn-cart-remove" onclick="triggerDelete('{{ item.product.id }}')">Удалить</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="{% url 'shop:order_create' %}" class="btn text-white px-5 py-3 text-uppercase fw-bold" style="background-color: #5A544B; border-radius: 30px; font-size: 0.85rem; letter-spacing: 1px; border: none;">
+                Оформить заказ
+            </a>
         </div>
     </div>
+</div>
 
-    <div id="cartItemsContainer">
-        {% for item in cart %}
-        {% with product=item.product %}
-        <div class="cart-item-row" id="product-row-{{ product.id }}">
-            <div class="cart-item-img">
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}">
-                {% endif %}
+<div class="modal fade koti-modal" id="cartDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content shadow">
+            <div class="modal-header border-0 pb-1">
+                <h5 class="modal-title">Удалить товар?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.8rem;"></button>
             </div>
-
-            <div>
-                <div class="cart-item-name">{{ product.name }}</div>
-                <div class="cart-item-price">{{ product.price }} руб.</div>
+            <div class="modal-body text-muted" style="font-size: 0.95rem;">
+                Вы действительно хотите удалить этот товар из корзины?
             </div>
-
-            <div class="quantity-counter">
-                <button type="button" class="counter-btn" onclick="changeQty({{ product.id }}, -1)">-</button>
-                <span class="counter-value" id="qty-val-{{ product.id }}">{{ item.quantity }}</span>
-                <button type="button" class="counter-btn" onclick="changeQty({{ product.id }}, 1)">+</button>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn-koti-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn-koti-danger" id="confirmCartDeleteBtn">Удалить</button>
             </div>
-
-            <div class="item-total-display">
-                <span id="item-total-{{ product.id }}">{{ item.total_price }}</span> руб.
-            </div>
-
-            <button class="btn-to-wishlist" onclick="removeProduct({{ product.id }})">Удалить</button>
         </div>
-        {% endwith %}
-        {% empty %}
-        <div class="text-center py-5 id='emptyCartMsg'">
-            <p class="text-muted">Ваша корзина пуста.</p>
-            <a href="{% url 'shop:catalog_view' %}" class="btn-lumora-dark mt-2">Перейти в каталог</a>
-        </div>
-        {% endfor %}
     </div>
-
-    {% if cart %}
-    <div class="cart-checkout-box" id="checkoutBtnBox">
-        <a href="{% url 'shop:order_create' %}" class="btn-koti-checkout">Оформить заказ</a>
-    </div>
-    {% endif %}
 </div>
 
 <script>
-    function changeQty(productId, delta) {
-        const qtySpan = document.getElementById(`qty-val-${productId}`);
-        let currentQty = parseInt(qtySpan.innerText);
+    let productIdToDelete = null;
+
+    function changeCartQty(productId, delta) {
+        const qtyElement = document.getElementById(`qty-val-${productId}`);
+        if (!qtyElement) return;
+
+        let currentQty = parseInt(qtyElement.innerText);
         let newQty = currentQty + delta;
 
-        if (newQty <= 0) {
-            removeProduct(productId);
+        if (newQty < 1) {
+            triggerDelete(productId);
             return;
         }
 
         const formData = new FormData();
         formData.append('quantity', newQty);
         formData.append('override_quantity', 'true');
-        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        formData.append('is_ajax', 'true');
 
         fetch(`/cart/add/${productId}/`, {
             method: 'POST',
-            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                qtyElement.innerText = newQty;
+
+                const itemRow = document.getElementById(`item-row-${productId}`);
+                const rawPrice = itemRow.getAttribute('data-price').replace(',', '.');
+                const singlePrice = parseFloat(rawPrice);
+
+                const newItemTotal = singlePrice * newQty;
+                document.getElementById(`item-total-${productId}`).innerText = newItemTotal.toFixed(2);
+
+                document.getElementById('topCartCount').innerText = data.cart_len;
+                document.getElementById('topCartTotal').innerText = parseFloat(data.cart_total_price).toFixed(2);
+
+                const headerCartBadge = document.getElementById('cart-badge-count');
+                if (headerCartBadge) headerCartBadge.innerText = data.cart_len;
+            }
+        })
+        .catch(err => console.error("Ошибка:", err));
+    }
+
+    function triggerDelete(productId) {
+        productIdToDelete = productId;
+        const modal = new bootstrap.Modal(document.getElementById('cartDeleteModal'));
+        modal.show();
+    }
+
+    document.getElementById('confirmCartDeleteBtn').addEventListener('click', function() {
+        if (!productIdToDelete) return;
+
+        fetch(`/cart/remove/${productIdToDelete}/`, {
+            method: 'GET',
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                qtySpan.innerText = newQty;
-                document.getElementById(`item-total-${productId}`).innerText = data.item_total_price;
-                document.getElementById('totalCartPrice').innerText = data.cart_total_price;
-                document.getElementById('topCartSummary').innerHTML = `${data.cart_len} товара на сумму <span>${data.cart_total_price}</span> руб.`;
-            }
-        });
-    }
+                document.getElementById(`item-row-${productIdToDelete}`).remove();
 
-    function removeProduct(productId) {
-        fetch(`/cart/remove/${productId}/`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': '{{ csrf_token }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const row = document.getElementById(`product-row-${productId}`);
-                row.remove();
+                document.getElementById('topCartCount').innerText = data.cart_len;
+                document.getElementById('topCartTotal').innerText = parseFloat(data.cart_total_price).toFixed(2);
 
-                document.getElementById('totalCartPrice').innerText = data.cart_total_price;
-                document.getElementById('topCartSummary').innerHTML = `${data.cart_len} товара на сумму <span>${data.cart_total_price}</span> руб.`;
+                const headerCartBadge = document.getElementById('cart-badge-count');
+                if (headerCartBadge) headerCartBadge.innerText = data.cart_len;
 
-                if (data.cart_len === 0) {
-                    document.getElementById('cartItemsContainer').innerHTML = `
-                        <div class="text-center py-5">
-                            <p class="text-muted">Ваша корзина пуста.</p>
-                            <a href="/catalog/" class="btn-lumora-dark mt-2">Перейти в каталог</a>
-                        </div>
-                    `;
-                    const checkoutBox = document.getElementById('checkoutBtnBox');
-                    if (checkoutBox) checkoutBox.remove();
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('cartDeleteModal'));
+                modalInstance.hide();
+
+                if (parseInt(data.cart_len) === 0) {
+                    location.reload();
                 }
             }
-        });
-    }
+        })
+        .catch(err => console.error("Ошибка:", err));
+    });
 </script>
 {% endblock %}
