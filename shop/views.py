@@ -5,7 +5,8 @@ from django.db.models import Min, Max
 from django.contrib import messages
 from .models import (Category, Product, MainBanner, CategoryBlockSettings, PromoBanner,
                      FeaturedProductsSettings, HeaderSettings, HeaderNavigation, FooterSettings,
-                     Purpose, Color, WorkingSchedule, DeliveryMethod, PaymentMethod, OrderFormField, Order)
+                     Purpose, Color, WorkingSchedule, Courier, CourierSchedule, DeliveryMethod, PaymentMethod,
+                     OrderFormField, Order)
 from .cart import Cart
 
 
@@ -61,17 +62,11 @@ def catalog_view(request):
     return render(request, 'shop/product/catalog.html', context)
 
 
-# --- КАРТОЧКА ТОВАРА С ПОХОЖИМИ ПОЗИЦИЯМИ ---
 def product_detail(request, slug):
     product = get_object_or_404(Product, slug=slug, available=True)
-    # Вытягиваем связанные товары, которые отмечены в админке
     related_products = product.related_products.filter(available=True)[:5]
-
     context = get_common_context(request)
-    context.update({
-        'product': product,
-        'related_products': related_products
-    })
+    context.update({'product': product, 'related_products': related_products})
     return render(request, 'shop/product/detail.html', context)
 
 
@@ -108,10 +103,11 @@ def cart_detail(request):
     return render(request, 'shop/product/cart_detail.html', context)
 
 
+# --- УМНЫЙ АВТОМАТИЧЕСКИЙ МУЛЬТИ-КУРЬЕРСКИЙ РАСЧЕТ ДАТ ---
 def calculate_delivery_dates():
     now = datetime.datetime.now()
     current_time = now.time()
-    schedule_map = {s.day_of_week: s for s in WorkingSchedule.objects.all()}
+
     months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября",
               "декабря"]
     days_ru = ["в понедельник", "во вторник", "в среду", "в четверг", "в пятницу", "в субботу", "в воскресенье"]
@@ -124,26 +120,45 @@ def calculate_delivery_dates():
         else:
             return f"{days_ru[dt.weekday()].capitalize()}, {dt.day} {months[dt.month - 1]}"
 
-    pickup_date_str = "В рабочий день"
+    # 1. Считаем Самовывоз (по графику магазина WorkingSchedule)
+    shop_sched_map = {s.day_of_week: s for s in WorkingSchedule.objects.all()}
+    pickup_date_str = "В рабочий день магазина"
     for i in range(7):
         check_date = now + datetime.timedelta(days=i)
-        day_sched = schedule_map.get(check_date.weekday())
+        day_sched = shop_sched_map.get(check_date.weekday())
         if day_sched and day_sched.is_working:
             if i == 0 and current_time >= day_sched.work_to: continue
             pickup_date_str = format_date_string(check_date, is_today=(i == 0), is_tomorrow=(i == 1))
             break
 
-    courier_date_str = "В ближайший рабочий день курьера"
-    today_sched = schedule_map.get(now.weekday())
-    start_offset = 0
-    if today_sched:
-        if not today_sched.is_working or current_time >= today_sched.courier_cutoff_time:
-            start_offset = 1
+    # 2. Считаем Курьерскую доставку (по сменам всех активных курьеров CourierSchedule)
+    courier_date_str = "В ближайший день доставки"
 
-    for i in range(start_offset, start_offset + 7):
+    # Ищем по дням вперед
+    for i in range(7):
         check_date = now + datetime.timedelta(days=i)
-        day_sched = schedule_map.get(check_date.weekday())
-        if day_sched and day_sched.is_working:
+        day_num = check_date.weekday()
+
+        # Получаем все смены курьеров на этот день недели
+        active_schedules = CourierSchedule.objects.filter(
+            courier__is_active=True,
+            day_of_week=day_num,
+            is_working=True
+        )
+
+        day_has_available_courier = False
+        for sched in active_schedules:
+            if i == 0:
+                # Если проверяем «сегодня», курьер должен работать и время заказа должно быть ДО отсечки
+                if current_time < sched.courier_cutoff_time and current_time < sched.work_to:
+                    day_has_available_courier = True
+                    break
+            else:
+                # На будущие дни достаточно факта, что курьер работает в этот день
+                day_has_available_courier = True
+                break
+
+        if day_has_available_courier:
             courier_date_str = format_date_string(check_date, is_today=(i == 0), is_tomorrow=(i == 1))
             break
 

@@ -56,9 +56,6 @@ class Product(models.Model):
     available = models.BooleanField(default=True)
     purposes = models.ManyToManyField(Purpose, blank=True)
     colors = models.ManyToManyField(Color, blank=True)
-
-    # ДОБАВЛЕНО: Блок сопутствующих / похожих товаров (выбираются в админке)
-    # ИСПРАВЛЕНО: убрана лишняя "c" из названия параметра
     related_products = models.ManyToManyField(
         'self',
         blank=True,
@@ -197,23 +194,64 @@ class WorkingSchedule(models.Model):
         (6, 'Воскресенье'),
     ]
     day_of_week = models.IntegerField('День недели', choices=DAY_CHOICES, unique=True)
-    is_working = models.BooleanField('Рабочий день', default=True)
+    is_working = models.BooleanField('Рабочий день магазина', default=True)
     work_from = models.TimeField('Работаем с', default="09:00")
     work_to = models.TimeField('Работаем до', default="21:00")
-    courier_cutoff_time = models.TimeField(
-        'Время отсечки для доставки день в день',
-        default="15:00",
-        help_text="Если клиент заказывает позже этого времени, доставка переносится на следующий рабочий день."
-    )
 
     class Meta:
-        verbose_name = 'График работы дня'
-        verbose_name_plural = 'График работы (Дни недели)'
+        verbose_name = 'График работы магазина'
+        verbose_name_plural = 'График магазина (Самовывоз)'
         ordering = ['day_of_week']
 
     def __str__(self):
         status = f"{self.work_from.strftime('%H:%M')}-{self.work_to.strftime('%H:%M')}" if self.is_working else "Выходной"
         return f"{self.get_day_of_week_display()}: {status}"
+
+
+# --- НОВЫЙ БЛОК: КУРЬЕРЫ И ИХ ЛИЧНЫЕ ГРАФИКИ ---
+
+class Courier(models.Model):
+    name = models.CharField('ФИО Курьера / Название службы', max_length=100)
+    is_active = models.BooleanField('Активен (выезжает на заказы)', default=True)
+
+    class Meta:
+        verbose_name = 'Курьер'
+        verbose_name_plural = 'Курьеры'
+
+    def __str__(self):
+        return self.name
+
+
+class CourierSchedule(models.Model):
+    DAY_CHOICES = [
+        (0, 'Понедельник'),
+        (1, 'Вторник'),
+        (2, 'Среда'),
+        (3, 'Четверг'),
+        (4, 'Пятница'),
+        (5, 'Суббота'),
+        (6, 'Воскресенье'),
+    ]
+    courier = models.ForeignKey(Courier, on_delete=models.CASCADE, related_name='schedules', verbose_name='Курьер')
+    day_of_week = models.IntegerField('День недели', choices=DAY_CHOICES)
+    is_working = models.BooleanField('Рабочий день курьера', default=True)
+    work_from = models.TimeField('Рабочая смена с', default="10:00")
+    work_to = models.TimeField('Рабочая смена до', default="20:00")
+    courier_cutoff_time = models.TimeField(
+        'Время отсечки для доставки день в день',
+        default="15:00",
+        help_text="Если клиент заказывает позже этого времени, этот курьер сегодня заказ уже не возьмет."
+    )
+
+    class Meta:
+        verbose_name = 'Рабочий день курьера'
+        verbose_name_plural = 'Графики работы курьеров'
+        unique_together = ('courier', 'day_of_week')
+        ordering = ['courier', 'day_of_week']
+
+    def __str__(self):
+        status = f"{self.work_from.strftime('%H:%M')}-{self.work_to.strftime('%H:%M')}" if self.is_working else "Выходной"
+        return f"[{self.courier.name}] {self.get_day_of_week_display()}: {status}"
 
 
 class DeliveryMethod(models.Model):

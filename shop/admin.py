@@ -1,7 +1,24 @@
 from django.contrib import admin
 from .models import (Category, Product, MainBanner, CategoryBlockSettings, PromoBanner,
                      FeaturedProductsSettings, HeaderSettings, HeaderNavigation, FooterSettings,
-                     Purpose, Color, WorkingSchedule, DeliveryMethod, PaymentMethod, OrderFormField, Order)
+                     Purpose, Color, WorkingSchedule, Courier, CourierSchedule, DeliveryMethod, PaymentMethod, OrderFormField, Order)
+
+# Возможность редактировать график курьера прямо в его карточке
+class CourierScheduleInline(admin.TabularInline):
+    model = CourierSchedule
+    extra = 7  # Сразу выведет 7 строк под каждый день недели
+    max_num = 7
+
+@admin.register(Courier)
+class CourierAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_active')
+    list_editable = ('is_active',)
+    inlines = [CourierScheduleInline]
+
+@admin.register(WorkingSchedule)
+class WorkingScheduleAdmin(admin.ModelAdmin):
+    list_display = ('day_of_week', 'is_working', 'work_from', 'work_to')
+    list_editable = ('is_working', 'work_from', 'work_to')
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -10,13 +27,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ('category', 'available')
     search_fields = ('name', 'description')
     prepopulated_fields = {'slug': ('name',)}
-    # Позволяет удобно выбирать сопутствующие товары стрелочками
     filter_horizontal = ('purposes', 'colors', 'related_products')
-
-@admin.register(WorkingSchedule)
-class WorkingScheduleAdmin(admin.ModelAdmin):
-    list_display = ('day_of_week', 'is_working', 'work_from', 'work_to', 'courier_cutoff_time')
-    list_editable = ('is_working', 'work_from', 'work_to', 'courier_cutoff_time')
 
 @admin.register(OrderFormField)
 class OrderFormFieldAdmin(admin.ModelAdmin):
