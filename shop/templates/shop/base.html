@@ -1,0 +1,228 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}KÓTI — Эстетика твоего дома{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        body { background-color: #F8F5F0; font-family: 'Montserrat', sans-serif; color: #2D2D2D; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+        main { flex: 1; }
+        h1, h2, h3, .lumora-title { font-family: 'Playfair Display', serif; font-weight: 400; color: #1E1E1E; }
+        .navbar-lumora { padding: 20px 0; margin-bottom: 20px; }
+        .nav-link-lumora { color: #2D2D2D !important; font-size: 0.85rem; font-weight: 500; text-decoration: none; transition: opacity 0.2s; letter-spacing: 0.3px; }
+        .nav-link-lumora:hover { opacity: 0.7; }
+
+        .hero-container { position: relative; background-color: #EFEBE4; border-radius: 32px; padding: 25px 45px; margin-bottom: 35px; overflow: hidden; display: flex; align-items: center; }
+        .hero-container.hero-small { min-height: 240px; padding: 20px 45px; }
+        .hero-container.hero-small .hero-bg-circle { width: 250px; border-radius: 125px 125px 0 0; }
+        .hero-container.hero-small .hero-heading { font-size: 2.1rem; margin-bottom: 8px; }
+        .hero-container.hero-medium { min-height: 310px; }
+        .hero-container.hero-medium .hero-bg-circle { width: 320px; border-radius: 160px 160px 0 0; }
+        .hero-container.hero-medium .hero-heading { font-size: 2.4rem; }
+        .hero-container.hero-large { min-height: 400px; padding: 40px 45px; }
+        .hero-container.hero-large .hero-bg-circle { width: 400px; border-radius: 200px 200px 0 0; }
+        .hero-container.hero-large .hero-heading { font-size: 2.8rem; }
+
+        .lumora-section-bg { background-color: #FFFFFF; border-radius: 24px; margin-bottom: 40px; transition: padding 0.3s ease; }
+        .pad-small { padding: 20px; }
+        .pad-medium { padding: 40px; }
+        .pad-large { padding: 60px; }
+
+        .category-circle-wrapper { text-align: center; text-decoration: none; color: inherit; display: block; }
+        .category-circle { border-radius: 50%; overflow: hidden; margin: 0 auto 12px; background-color: #EFEBE4; border: 1px solid rgba(0,0,0,0.03); transition: transform 0.3s ease; }
+        .category-circle-wrapper:hover .category-circle { transform: scale(1.05); }
+        .category-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .category-name { font-size: 0.85rem; font-weight: 600; color: #1E1E1E; }
+        .category-count { font-size: 0.75rem; color: #8A8A8A; }
+
+        .cats-small .category-circle { width: 100px; height: 100px; }
+        .cats-medium .category-circle { width: 120px; height: 120px; }
+        .cats-large .category-circle { width: 150px; height: 150px; }
+
+        .sale-banner-box { background-color: #1E3F35; border-radius: 24px; overflow: hidden; color: #FFFFFF; transition: all 0.3s ease; }
+        .sale-badge-pink { background-color: #E2C0B9; border-radius: 50%; color: #1E3F35; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; line-height: 1.1; }
+
+        .sale-banner-box.promo-small { min-height: 200px; }
+        .sale-banner-box.promo-small .row > div:first-child { padding: 30px 40px !important; }
+        .sale-banner-box.promo-small .sale-badge-pink { width: 90px; height: 90px; font-size: 0.85rem; }
+        .sale-banner-box.promo-small h2 { font-size: 1.8rem !important; }
+        .sale-banner-box.promo-medium { min-height: 280px; }
+        .sale-banner-box.promo-medium .row > div:first-child { padding: 45px 50px !important; }
+        .sale-banner-box.promo-medium .sale-badge-pink { width: 110px; height: 110px; }
+        .sale-banner-box.promo-medium h2 { font-size: 2.2rem !important; }
+        .sale-banner-box.promo-large { min-height: 360px; }
+        .sale-banner-box.promo-large .row > div:first-child { padding: 60px 60px !important; }
+        .sale-banner-box.promo-large .sale-badge-pink { width: 135px; height: 135px; }
+        .sale-banner-box.promo-large h2 { font-size: 2.6rem !important; }
+
+        .hero-subtitle { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #7A746B; margin-bottom: 6px; }
+        .hero-bg-circle { position: absolute; right: 6%; top: -10px; height: 120%; background-color: #E2C0B9; transform: rotate(10deg); z-index: 1; opacity: 0.7; transition: all 0.3s ease; }
+        .hero-img-placeholder { position: absolute; right: 10%; bottom: 0; height: 95%; z-index: 2; }
+        .btn-lumora-dark { background-color: #1E3F35; color: #FFFFFF !important; border: none; border-radius: 25px; font-size: 0.75rem; font-weight: 500; padding: 8px 24px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; transition: background-color 0.2s; }
+        .btn-lumora-dark:hover { background-color: #152B24; }
+        .hero-badge-item { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; }
+        .badge-icon-circle { width: 28px; height: 28px; border-radius: 50%; background-color: #E5DEC9; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
+
+        .toast-container-koti { position: fixed; top: 25px; right: 25px; z-index: 9999; }
+        .toast-koti { background-color: #1E3F35 !important; color: #FFFFFF !important; border: none !important; border-radius: 16px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important; font-family: 'Montserrat', sans-serif; }
+        .toast-koti .toast-body { padding: 16px 20px; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+        .toast-close-btn { background: none; border: none; color: #E2C0B9; font-size: 1.1rem; cursor: pointer; line-height: 1; }
+
+        .koti-footer { background-color: #EFEBE4; border-radius: 32px 32px 0 0; padding: 40px 20px 25px; margin-top: 50px; text-align: center; }
+        .footer-social-title { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: #5A544B; margin-bottom: 15px; }
+        .footer-social-links { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; }
+        .footer-social-icon { width: 42px; height: 42px; border-radius: 50%; background-color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; color: #1E3F35; transition: transform 0.2s, background-color 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin: 0 10px; text-decoration: none !important; }
+        .footer-social-icon:hover { transform: scale(1.08); background-color: #1E3F35; color: #FFFFFF; }
+        .footer-social-icon svg { width: 20px; height: 20px; fill: currentColor; }
+        .footer-copyright { font-size: 0.75rem; color: #8A847B; letter-spacing: 0.2px; }
+    </style>
+</head>
+<body>
+
+    <div class="toast-container-koti" id="toastContainer"></div>
+
+    <div class="container" style="max-width: 1200px;">
+        <nav class="navbar-lumora d-flex justify-content-between align-items-center">
+            <a href="{% url 'shop:product_list' %}" class="lumora-title text-decoration-none d-flex align-items-center gap-2" style="font-size: 1.6rem; font-weight: 700; letter-spacing: 1px;">
+                <span style="color: #1E3F35;">{{ header_settings.logo_icon|default:"★" }}</span>
+                {{ header_settings.site_name|default:"KÓTI" }}
+            </a>
+
+            <div class="d-none d-md-flex gap-4">
+                {% for item in header_menu %}
+                    <a href="{{ item.link }}" class="nav-link-lumora">{{ item.title }}</a>
+                {% empty %}
+                    <a href="#" class="nav-link-lumora">Shop</a>
+                    <a href="#" class="nav-link-lumora">Collections</a>
+                    <a href="#" class="nav-link-lumora">New Arrivals</a>
+                    <a href="#" class="nav-link-lumora">About</a>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex align-items-center gap-3 fs-5">
+                <a href="#" class="text-dark text-decoration-none">🔍</a>
+                <a href="#" class="text-dark text-decoration-none">👤</a>
+                <a href="{% url 'shop:cart_detail' %}" class="text-dark text-decoration-none position-relative" id="cartIcon">
+                    👜
+                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle cart-badge {% if not cart or cart|length == 0 %}d-none{% endif %}" style="width: 8px; height: 8px;"></span>
+                </a>
+            </div>
+        </nav>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="koti-footer">
+            {% if footer_settings.instagram_url or footer_settings.telegram_url %}
+                <div class="footer-social-title">Наши соцсети</div>
+                <div class="footer-social-links">
+                    {% if footer_settings.instagram_url %}
+                    <a href="{{ footer_settings.instagram_url }}" target="_blank" rel="noopener noreferrer" class="footer-social-icon" aria-label="Instagram">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                        </svg>
+                    </a>
+                    {% endif %}
+                    {% if footer_settings.telegram_url %}
+                    <a href="{{ footer_settings.telegram_url }}" target="_blank" rel="noopener noreferrer" class="footer-social-icon" aria-label="Telegram">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 .587c-6.294 0-11.398 5.104-11.398 11.398 0 6.295 5.104 11.398 11.398 11.398 6.295 0 11.398-5.103 11.398-11.398 0-6.294-5.103-11.398-11.398-11.398zm5.541 8.251l-1.892 8.916c-.141.637-.518.793-1.05.495l-2.883-2.124-1.391 1.339c-.154.154-.284.284-.582.284l.207-2.935 5.347-4.831c.232-.207-.051-.322-.361-.116l-6.608 4.159-2.845-.891c-.619-.193-.632-.619.129-.916l11.115-4.284c.515-.187.965.122.812.899z"/>
+                        </svg>
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <div class="footer-copyright">
+                {{ footer_settings.copyright_text|default:"© 2026 KÓTI. Все права защищены." }}
+            </div>
+        </footer>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Функция для получения CSRF-токена из куки браузера
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+
+            document.body.addEventListener('submit', function(e) {
+                if (e.target.action && e.target.action.includes('/cart/add/')) {
+                    e.preventDefault();
+
+                    var form = e.target;
+                    var url = form.action;
+                    var formData = new FormData(form);
+                    formData.append('is_ajax', 'true');
+
+                    fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            // ДОБАВЛЕНО: Передаем токен защиты бэкенду
+                            'X-CSRFToken': csrftoken
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) { throw new Error('Ошибка сервера: ' + response.status); }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            var container = document.getElementById('toastContainer');
+                            var toastHtml = `
+                                <div class="toast toast-koti show" role="alert">
+                                    <div class="toast-body">
+                                        <span>Товар добавлен в корзину</span>
+                                        <button type="button" class="toast-close-btn" onclick="this.closest('.toast').classList.remove('show')">×</button>
+                                    </div>
+                                </div>
+                            `;
+                            container.insertAdjacentHTML('beforeend', toastHtml);
+
+                            var newToast = container.lastElementChild;
+                            setTimeout(function() {
+                                if (newToast) { newToast.classList.remove('show'); setTimeout(() => newToast.remove(), 400); }
+                            }, 2500);
+
+                            // Анимация и активация индикатора корзины
+                            var cartIcon = document.getElementById('cartIcon');
+                            if (cartIcon) {
+                                var badge = cartIcon.querySelector('.cart-badge');
+                                if (badge) { badge.classList.remove('d-none'); }
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка добавления:', error);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

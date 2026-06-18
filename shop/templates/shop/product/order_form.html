@@ -1,0 +1,278 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Оформление заказа — KÓTI{% endblock %}
+
+{% block content %}
+<style>
+    .checkout-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        font-weight: 400;
+        margin-bottom: 30px;
+    }
+    .checkout-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 40px;
+        align-items: start;
+    }
+    @media (max-width: 992px) {
+        .checkout-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Сводка заказа слева */
+    .order-summary-box {
+        background-color: #FFFFFF;
+        border-radius: 24px;
+        padding: 30px;
+        border: 1px solid #EFEBE4;
+    }
+    .box-section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: #1E1E1E;
+    }
+    .checkout-item-row {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #EFEBE4;
+        margin-bottom: 20px;
+    }
+    .checkout-item-img {
+        width: 60px; height: 60px;
+        background-color: #EFEBE4;
+        border-radius: 8px; overflow: hidden;
+    }
+    .checkout-item-img img { width: 100%; height: 100%; object-fit: cover; }
+
+    .price-line {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        color: #8A847B;
+        margin-bottom: 10px;
+    }
+    .total-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-top: 25px;
+        color: #2D2D2D;
+    }
+    .total-price-val {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+    }
+
+    /* Форма чекаута справа */
+    .checkout-form-box {
+        background-color: #FAF6F0;
+        border-radius: 24px;
+        padding: 35px;
+    }
+
+    .delivery-selector-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    .delivery-card {
+        background: #FFFFFF;
+        border: 1px solid #D0C9BE;
+        border-radius: 12px;
+        padding: 15px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .delivery-card.active {
+        border: 2px solid #2D2D2D !important;
+        padding: 14px;
+    }
+    .delivery-card-title { font-weight: 600; font-size: 0.9rem; color: #2D2D2D; }
+    .delivery-card-time { font-size: 0.75rem; color: #8A847B; margin-top: 4px; }
+    .delivery-card-price { font-size: 0.8rem; color: #2D2D2D; margin-top: 2px; }
+
+    .koti-input-group { margin-bottom: 15px; }
+    .koti-field {
+        width: 100%;
+        background-color: #FFFFFF;
+        border: 1px solid #D0C9BE;
+        border-radius: 10px;
+        padding: 10px 15px;
+        font-size: 0.9rem;
+        color: #2D2D2D;
+        transition: border-color 0.2s;
+    }
+    .koti-field::placeholder { color: #A69F94; }
+    .koti-field:focus { outline: none; border-color: #2D2D2D; }
+
+    .payment-radio-group { margin-bottom: 30px; }
+    .payment-radio-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+        color: #4A4A4A;
+        margin-bottom: 10px;
+        cursor: pointer;
+    }
+    .payment-radio-option input { accent-color: #2D2D2D; cursor: pointer; }
+
+    .btn-submit-order {
+        width: 100%;
+        background-color: transparent;
+        color: #2D2D2D;
+        border: 2px solid #2D2D2D;
+        border-radius: 30px;
+        padding: 15px;
+        font-size: 1.1rem;
+        font-family: 'Playfair Display', serif;
+        transition: background-color 0.2s, color 0.2s;
+    }
+    .btn-submit-order:hover { background-color: #2D2D2D; color: #FFFFFF; }
+    .privacy-notice { font-size: 0.7rem; color: #8A847B; text-align: center; margin-top: 12px; }
+</style>
+
+<div class="container p-0 my-4">
+    <div class="cart-breadcrumbs mb-3 text-muted small">
+        <a href="{% url 'shop:product_list' %}" class="text-muted text-decoration-none">Каталог</a> /
+        <a href="{% url 'shop:cart_detail' %}" class="text-muted text-decoration-none">Корзина</a> /
+        <span>Оформление заказа</span>
+    </div>
+
+    <h1 class="checkout-title">Оформление заказа</h1>
+
+    {% if messages %}
+        <div class="alert alert-danger rounded-4 mb-4 small">
+            {% for msg in messages %}{{ msg }}<br>{% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'shop:order_create' %}" id="mainOrderForm">
+        {% csrf_token %}
+        <input type="hidden" name="delivery_method" id="hiddenDeliveryInput" value="">
+
+        <div class="checkout-grid">
+            <div class="order-summary-box shadow-sm">
+                <div class="box-section-title">Ваш заказ</div>
+
+                {% for item in cart %}
+                <div class="checkout-item-row">
+                    <div class="checkout-item-img">
+                        {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold small text-dark mb-1">{{ item.product.name }}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">150 мл</div>
+                    </div>
+                    <div class="text-muted small px-3">{{ item.quantity }} шт</div>
+                    <div class="fw-medium small">{{ item.total_price }} р</div>
+                </div>
+                {% endfor %}
+
+                <div class="pt-2">
+                    <div class="price-line">
+                        <span>Итого:</span>
+                        <span><span id="summaryCartPrice">{{ cart.get_total_price }}</span> р</span>
+                    </div>
+                    <div class="price-line">
+                        <span>Доставка:</span>
+                        <span><span id="summaryDeliveryPrice">0</span> р</span>
+                    </div>
+                    <hr style="border-color: #EFEBE4;">
+                    <div class="total-line">
+                        <span>К оплате:</span>
+                        <div class="text-dark"><span class="total-price-val" id="summaryFinalTotal">{{ cart.get_total_price }}</span> р</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="checkout-form-box">
+                <div class="box-section-title">Способ получения</div>
+                <div class="delivery-selector-grid">
+                    {% for method in delivery_methods %}
+                    <div class="delivery-card" id="dm-card-{{ method.id }}" data-id="{{ method.id }}" data-price="{{ method.price }}" onclick="selectDelivery({{ method.id }})">
+                        <div class="delivery-card-title">{{ method.title }}</div>
+                        <div class="delivery-card-time">
+                            {% if method.method_type == 'pickup' %}
+                                {{ calculated_dates.pickup_date }}
+                            {% else %}
+                                {{ calculated_dates.courier_date }}
+                            {% endif %}
+                        </div>
+                        <div class="delivery-card-price">{% if method.price == 0 %}Бесплатно{% else %}{{ method.price }} р{% endif %}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="box-section-title">Адрес</div>
+                <div class="koti-input-group">
+                    {% for field in fields_address %}
+                        <input type="{{ field.field_type }}" name="{{ field.field_name }}" class="koti-field mb-2" placeholder="{{ field.label }}" {% if field.is_required %}required{% endif %}>
+                    {% endfor %}
+                </div>
+
+                <div class="box-section-title mt-4">Данные получателя</div>
+                <div class="koti-input-group">
+                    {% for field in fields_recipient %}
+                        {% if field.field_type == 'textarea' %}
+                            <textarea name="{{ field.field_name }}" class="koti-field" placeholder="{{ field.label }}" rows="3" {% if field.is_required %}required{% endif %}></textarea>
+                        {% else %}
+                            <input type="{{ field.field_type }}" name="{{ field.field_name }}" class="koti-field mb-2" placeholder="{{ field.label }}" {% if field.is_required %}required{% endif %}>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div class="box-section-title mt-4">Способ оплаты:</div>
+                <div class="payment-radio-group">
+                    {% for pay in payment_methods %}
+                    <label class="payment-radio-option">
+                        <input type="radio" name="payment_method" value="{{ pay.slug }}" {% if forloop.first %}checked{% endif %}>
+                        <span>{{ pay.title }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="btn-submit-order">Оформить заказ</button>
+                <div class="privacy-notice">
+                    <input type="checkbox" checked required> Нажимая на кнопку Вы соглашаетесь на обработку персональных данных
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const baseCartTotal = parseFloat("{{ cart.get_total_price }}");
+
+    function selectDelivery(methodId) {
+        document.querySelectorAll('.delivery-card').forEach(card => card.classList.remove('active'));
+        const selectedCard = document.getElementById(`dm-card-${methodId}`);
+        selectedCard.classList.add('active');
+
+        document.getElementById('hiddenDeliveryInput').value = methodId;
+
+        const deliveryPrice = parseFloat(selectedCard.getAttribute('data-price'));
+        document.getElementById('summaryDeliveryPrice').innerText = deliveryPrice.toFixed(0);
+
+        const finalTotal = baseCartTotal + deliveryPrice;
+        document.getElementById('summaryFinalTotal').innerText = finalTotal.toFixed(0);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstDelivery = document.querySelector('.delivery-card');
+        if (firstDelivery) {
+            selectDelivery(firstDelivery.getAttribute('data-id'));
+        }
+    });
+</script>
+{% endblock %}

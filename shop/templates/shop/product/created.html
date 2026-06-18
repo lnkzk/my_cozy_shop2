@@ -1,0 +1,13 @@
+{% extends "shop/base.html" %}
+{% block title %}Заказ оформлен!{% endblock %}
+
+{% block content %}
+<div class="text-center py-5 card shadow-sm col-md-8 mx-auto" style="background-color: #f4f0ea;">
+    <h1 class="display-4 mb-3">🎉 Спасибо за заказ!</h1>
+    <p class="lead text-muted fs-4">Ваш заказ **№{{ order.id }}** успешно принят.</p>
+    <p class="text-secondary">Мы свяжемся с вами по телефону **{{ order.phone }}** в ближайшее время для подтверждения доставки.</p>
+    <div class="mt-4">
+        <a href="{% url 'shop:product_list' %}" class="btn btn-cozy btn-lg px-5">Вернуться на главную</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,265 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Корзина — KÓTI{% endblock %}
+
+{% block content %}
+<style>
+    .cart-breadcrumbs {
+        font-size: 0.75rem;
+        color: #8A847B;
+        margin-bottom: 25px;
+        letter-spacing: 0.5px;
+    }
+    .cart-breadcrumbs a {
+        color: #8A847B;
+        text-decoration: none;
+    }
+    .cart-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 1px solid #2D2D2D;
+        padding-bottom: 15px;
+        margin-bottom: 10px;
+    }
+    .cart-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.4rem;
+        font-weight: 400;
+        margin: 0;
+    }
+    .cart-summary-text {
+        font-size: 1rem;
+        color: #2D2D2D;
+        font-weight: 500;
+    }
+
+    /* Строки товаров по макету */
+    .cart-item-row {
+        display: grid;
+        grid-template-columns: 120px 2fr 1fr 1fr 1.2fr;
+        align-items: center;
+        gap: 20px;
+        padding: 25px 0;
+        border-bottom: 1px solid #EFEBE4;
+    }
+    @media (max-width: 768px) {
+        .cart-item-row {
+            grid-template-columns: 90px 1fr;
+            grid-template-rows: auto auto;
+            gap: 15px;
+        }
+        .cart-item-meta { grid-column: span 2; display: flex; justify-content: space-between; }
+    }
+    .cart-item-img {
+        width: 120px;
+        aspect-ratio: 1 / 1;
+        background-color: #EFEBE4;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .cart-item-img img {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .cart-item-name {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #1E1E1E;
+        margin-bottom: 5px;
+    }
+    .cart-item-price {
+        font-size: 0.9rem;
+        color: #8A847B;
+    }
+
+    /* Счётчик количества */
+    .quantity-counter {
+        display: inline-flex;
+        align-items: center;
+        background-color: transparent;
+        gap: 15px;
+        font-size: 0.9rem;
+    }
+    .counter-btn {
+        background: none;
+        border: none;
+        color: #2D2D2D;
+        font-size: 1.1rem;
+        cursor: pointer;
+        padding: 0 5px;
+        user-select: none;
+    }
+    .counter-value {
+        font-weight: 500;
+        min-width: 15px;
+        text-align: center;
+    }
+
+    .item-total-display {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #2D2D2D;
+    }
+
+    .btn-to-wishlist {
+        background-color: #5A5E5B;
+        color: #FFFFFF !important;
+        border: none;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        padding: 8px 20px;
+        text-decoration: none;
+        transition: opacity 0.2s;
+        display: inline-block;
+        text-align: center;
+        width: fit-content;
+        justify-self: end;
+    }
+    .btn-to-wishlist:hover {
+        opacity: 0.9;
+    }
+
+    /* Центральная кнопка внизу */
+    .cart-checkout-box {
+        display: flex;
+        justify-content: center;
+        margin-top: 50px;
+        margin-bottom: 30px;
+    }
+    .btn-koti-checkout {
+        background-color: #5A5E5B;
+        color: #FFFFFF !important;
+        border: none;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        padding: 12px 50px;
+        text-decoration: none;
+        letter-spacing: 0.5px;
+        transition: background-color 0.2s;
+    }
+    .btn-koti-checkout:hover {
+        background-color: #444845;
+    }
+</style>
+
+<div class="container p-0 my-3">
+    <div class="cart-breadcrumbs">
+        <a href="{% url 'shop:product_list' %}">Главная</a> /
+        <a href="{% url 'shop:catalog_view' %}">Каталог</a> /
+        <span>Корзина</span>
+    </div>
+
+    <div class="cart-header-row">
+        <h1 class="cart-title">Корзина</h1>
+        <div class="cart-summary-text" id="topCartSummary">
+            {{ cart|length }} товара на сумму <span id="totalCartPrice">{{ cart.get_total_price }}</span> руб.
+        </div>
+    </div>
+
+    <div id="cartItemsContainer">
+        {% for item in cart %}
+        {% with product=item.product %}
+        <div class="cart-item-row" id="product-row-{{ product.id }}">
+            <div class="cart-item-img">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                {% endif %}
+            </div>
+
+            <div>
+                <div class="cart-item-name">{{ product.name }}</div>
+                <div class="cart-item-price">{{ product.price }} руб.</div>
+            </div>
+
+            <div class="quantity-counter">
+                <button type="button" class="counter-btn" onclick="changeQty({{ product.id }}, -1)">-</button>
+                <span class="counter-value" id="qty-val-{{ product.id }}">{{ item.quantity }}</span>
+                <button type="button" class="counter-btn" onclick="changeQty({{ product.id }}, 1)">+</button>
+            </div>
+
+            <div class="item-total-display">
+                <span id="item-total-{{ product.id }}">{{ item.total_price }}</span> руб.
+            </div>
+
+            <button class="btn-to-wishlist" onclick="removeProduct({{ product.id }})">Удалить</button>
+        </div>
+        {% endwith %}
+        {% empty %}
+        <div class="text-center py-5 id='emptyCartMsg'">
+            <p class="text-muted">Ваша корзина пуста.</p>
+            <a href="{% url 'shop:catalog_view' %}" class="btn-lumora-dark mt-2">Перейти в каталог</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if cart %}
+    <div class="cart-checkout-box" id="checkoutBtnBox">
+        <a href="{% url 'shop:order_create' %}" class="btn-koti-checkout">Оформить заказ</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function changeQty(productId, delta) {
+        const qtySpan = document.getElementById(`qty-val-${productId}`);
+        let currentQty = parseInt(qtySpan.innerText);
+        let newQty = currentQty + delta;
+
+        if (newQty <= 0) {
+            removeProduct(productId);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('quantity', newQty);
+        formData.append('override_quantity', 'true');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(`/cart/add/${productId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                qtySpan.innerText = newQty;
+                document.getElementById(`item-total-${productId}`).innerText = data.item_total_price;
+                document.getElementById('totalCartPrice').innerText = data.cart_total_price;
+                document.getElementById('topCartSummary').innerHTML = `${data.cart_len} товара на сумму <span>${data.cart_total_price}</span> руб.`;
+            }
+        });
+    }
+
+    function removeProduct(productId) {
+        fetch(`/cart/remove/${productId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const row = document.getElementById(`product-row-${productId}`);
+                row.remove();
+
+                document.getElementById('totalCartPrice').innerText = data.cart_total_price;
+                document.getElementById('topCartSummary').innerHTML = `${data.cart_len} товара на сумму <span>${data.cart_total_price}</span> руб.`;
+
+                if (data.cart_len === 0) {
+                    document.getElementById('cartItemsContainer').innerHTML = `
+                        <div class="text-center py-5">
+                            <p class="text-muted">Ваша корзина пуста.</p>
+                            <a href="/catalog/" class="btn-lumora-dark mt-2">Перейти в каталог</a>
+                        </div>
+                    `;
+                    const checkoutBox = document.getElementById('checkoutBtnBox');
+                    if (checkoutBox) checkoutBox.remove();
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
