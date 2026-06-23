@@ -1,212 +1,384 @@
-{% extends 'shop/base.html' %}
+{% extends "shop/base.html" %}
+{% load static %}
+
+{% block title %}Главная — {{ header_settings.site_name|default:"KÓTI" }}{% endblock %}
 
 {% block content %}
 <style>
-    /* Карточки новинок и топ продаж */
-    .lumora-product-card {
-        border: none !important;
-        background: transparent !important;
+    /* =========================================================
+       СТИЛИ ГЛАВНОГО БАННЕРА (HERO SECTION)
+       ========================================================= */
+    .main-banner-hero {
         position: relative;
-    }
-    .lumora-img-box {
-        width: 100%;
-        aspect-ratio: 1 / 1;
-        background-color: #EFEBE4;
-        border-radius: 16px;
+        background-color: #F8F5F0;
+        background-size: cover;
+        background-position: center;
+        border-radius: 30px;
         overflow: hidden;
-        position: relative;
+        display: flex;
+        align-items: center;
+        margin-bottom: 40px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
     }
-    .lumora-img-box img {
-        width: 100%; height: 100%; object-fit: cover;
-        transition: transform 0.4s ease;
-    }
-    .lumora-product-card:hover .lumora-img-box img {
-        transform: scale(1.03);
-    }
-    .fav-dot {
+    /* Размеры баннера из админки */
+    .banner-size-small { height: 350px; }
+    .banner-size-medium { height: 500px; }
+    .banner-size-large { height: 650px; }
+
+    .banner-overlay {
         position: absolute;
-        top: 15px; right: 15px;
-        background: white; border-radius: 50%;
-        width: 30px; height: 30px;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(90deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+        z-index: 1;
+    }
+    .banner-content {
+        position: relative;
+        z-index: 2;
+        max-width: 600px;
+        padding: 0 60px;
+    }
+    .banner-subtitle {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #8A847B;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .banner-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 3rem;
+        color: #1E3F35;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 15px;
+    }
+    .banner-text {
+        font-size: 1.05rem;
+        color: #5A544B;
+        line-height: 1.6;
+        margin-bottom: 30px;
+    }
+    .btn-banner {
+        display: inline-block;
+        background-color: #1E3F35;
+        color: white;
+        text-decoration: none;
+        padding: 14px 35px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: background-color 0.2s, transform 0.2s;
+    }
+    .btn-banner:hover {
+        background-color: #152B24;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* Плашки логистики внутри баннера */
+    .banner-badges-row {
+        display: flex;
+        gap: 30px;
+        margin-top: 35px;
+        border-top: 1px solid rgba(30, 63, 53, 0.1);
+        padding-top: 25px;
+    }
+    .banner-badge-item { display: flex; align-items: center; gap: 12px; }
+    .banner-badge-icon {
+        width: 40px; height: 40px;
+        background-color: rgba(30, 63, 53, 0.06);
+        border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
-        font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        z-index: 5;
+        color: #1E3F35; font-size: 1.1rem;
+    }
+    .banner-badge-title { font-size: 0.9rem; font-weight: 700; color: #1E3F35; margin: 0; }
+    .banner-badge-sub { font-size: 0.8rem; color: #8A847B; margin: 0; }
+
+    /* =========================================================
+       СТИЛИ БЛОКА КАТЕГОРИЙ (ПРЕМИАЛЬНЫЙ КРУГЛЫЙ ВИЗУАЛ)
+       ========================================================= */
+    .category-block-wrapper {
+        background-color: #FFFFFF;
+        border-radius: 30px;
+        padding: 40px 50px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+    .category-circle {
+        width: 170px;
+        height: 170px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #EFEBE4;
+        margin: 0 auto 15px auto;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .category-circle img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .category-item:hover .category-circle {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+    }
+    .category-title { font-size: 1.05rem; font-weight: 700; color: #1E3F35; }
+    .category-count { font-size: 0.85rem; color: #8A847B; margin-top: 4px; }
+
+    /* =========================================================
+       СТИЛИ ПРОМО-БАННЕРА (АКЦИИ)
+       ========================================================= */
+    .promo-banner-box {
+        position: relative;
+        background-color: #1E3F35;
+        border-radius: 30px;
+        overflow: hidden;
+        margin: 50px 0;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .promo-left { padding: 50px 60px; max-width: 550px; z-index: 2; }
+    .promo-tag {
+        display: inline-block;
+        background-color: rgba(255,255,255,0.15);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+    }
+    .promo-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 600; line-height: 1.3; margin-bottom: 15px; }
+    .promo-desc { font-size: 1rem; opacity: 0.85; line-height: 1.6; margin-bottom: 25px; }
+    .btn-promo {
+        display: inline-block;
+        background-color: white;
+        color: #1E3F35;
+        text-decoration: none;
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: background-color 0.2s, transform 0.2s;
+    }
+    .btn-promo:hover { background-color: #F8F5F0; color: #1E3F35; transform: translateY(-2px); }
+
+    .promo-right { position: relative; width: 45%; height: 100%; min-height: 380px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .promo-img { width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; }
+
+    /* Круглый акционный кружок (Badge процент скидки) */
+    .promo-badge-circle {
+        position: absolute;
+        top: 30px; right: 40px;
+        width: 100px; height: 100px;
+        background-color: #D4AF37; /* Благородное золото */
+        color: white;
+        border-radius: 50%;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        text-align: center; z-index: 3;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        font-weight: 600; line-height: 1.1;
+    }
+
+    /* =========================================================
+       СТИЛИ КАРТОЧЕК ТОВАРОВ "ТОП ПРОДАЖ"
+       ========================================================= */
+    .lumora-product-card { border: none !important; background: transparent !important; display: flex; flex-direction: column; }
+    .detail-img-box-related { background-color: #EFEBE4; border-radius: 12px; overflow: hidden; width: 100%; aspect-ratio: 1/1; position: relative; margin-bottom: 12px; }
+    .detail-img-box-related img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+    .lumora-product-card:hover .detail-img-box-related img { transform: scale(1.03); }
+
+    .koti-fav-btn { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 50%; background: white; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #8A847B; transition: color 0.2s; }
+    .koti-fav-btn:hover { color: #1E3F35; }
+
+    .btn-outline-koti { border: 1px solid #D0C9BE; color: #8A847B; font-weight: 500; transition: all 0.2s; background: transparent; }
+    .btn-outline-koti:hover { background-color: #1E3F35; border-color: #1E3F35; color: white; }
+
+    .product-title-clamp {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        height: 2.8em;
     }
 </style>
 
-<!-- ================= БЛОК 1: ГЛАВНЫЙ HERO-БАННЕР ================= -->
-{% if main_banner %}
-<div class="hero-container hero-{{ main_banner.banner_size }}">
-    <div class="hero-bg-circle"></div>
+<div class="container p-0 pb-5">
 
-    <div class="hero-img-placeholder d-none d-lg-block">
-        {% if main_banner.image %}
-            <img src="{{ main_banner.image.url }}" alt="Banner illustration" style="height: 100%; object-fit: contain;">
-        {% endif %}
-    </div>
+    {% if main_banner %}
+    <div class="main-banner-hero banner-size-{{ main_banner.banner_size }}"
+         style="{% if main_banner.image %}background-image: url('{{ main_banner.image.url }}');{% endif %}">
 
-    <div class="position-relative" style="z-index: 10; max-width: 480px;">
-        <div class="hero-subtitle">
-            {{ main_banner.sub_title }}
-        </div>
-        <h1 class="hero-heading">
-            {{ main_banner.title|safe }}
-        </h1>
-        <p class="text-muted mb-3 small lh-lg" style="font-size: 0.8rem; line-height: 1.5;">
-            {{ main_banner.description }}
-        </p>
+        <div class="banner-overlay"></div>
 
-        <a href="{{ main_banner.button_link }}" class="btn-lumora-dark">
-            {{ main_banner.button_text }} —&gt;
-        </a>
-
-        <div class="d-flex gap-3 mt-3 pt-2">
-            {% if main_banner.show_shipping_badge %}
-            <div class="hero-badge-item">
-                <div class="badge-icon-circle">📦</div>
-                <div>
-                    <strong>{{ main_banner.shipping_title }}</strong><br>
-                    <span class="text-muted small" style="font-size: 0.65rem;">{{ main_banner.shipping_subtitle }}</span>
-                </div>
-            </div>
+        <div class="banner-content">
+            {% if main_banner.sub_title %}
+                <div class="banner-subtitle">{{ main_banner.sub_title }}</div>
+            {% endif %}
+            <h1 class="banner-title">{{ main_banner.title }}</h1>
+            {% if main_banner.description %}
+                <p class="banner-text">{{ main_banner.description }}</p>
+            {% endif %}
+            {% if main_banner.button_text and main_banner.button_link %}
+                <a href="{{ main_banner.button_link }}" class="btn-banner">{{ main_banner.button_text }}</a>
             {% endif %}
 
-            {% if main_banner.show_payment_badge %}
-            <div class="hero-badge-item">
-                <div class="badge-icon-circle" style="background-color: #CCD6CC;">🛡️</div>
-                <div>
-                    <strong>{{ main_banner.payment_title }}</strong><br>
-                    <span class="text-muted small" style="font-size: 0.65rem;">{{ main_banner.payment_subtitle }}</span>
+            {% if main_banner.show_shipping_badge or main_banner.show_payment_badge %}
+            <div class="banner-badges-row">
+                {% if main_banner.show_shipping_badge %}
+                <div class="banner-badge-item">
+                    <div class="banner-badge-icon">🚚</div>
+                    <div>
+                        <h4 class="banner-badge-title">{{ main_banner.shipping_title|default:"Доставка" }}</h4>
+                        <p class="banner-badge-sub">{{ main_banner.shipping_subtitle }}</p>
+                    </div>
                 </div>
+                {% endif %}
+                {% if main_banner.show_payment_badge %}
+                <div class="banner-badge-item">
+                    <div class="banner-badge-icon">💳</div>
+                    <div>
+                        <h4 class="banner-badge-title">{{ main_banner.payment_title|default:"Оплата" }}</h4>
+                        <p class="banner-badge-sub">{{ main_banner.payment_subtitle }}</p>
+                    </div>
+                </div>
+                {% endif %}
             </div>
             {% endif %}
         </div>
     </div>
-</div>
-{% endif %}
+    {% endif %}
 
-<!-- ================= БЛОК 2: ПОПУЛЯРНЫЕ КАТЕГОРИИ ================= -->
-<div class="lumora-section-bg cats-{{ category_block_settings.block_size|default:'medium' }} pad-{{ category_block_settings.block_padding|default:'medium' }}" id="catalog-section">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="lumora-title m-0" style="font-size: 1.8rem;">
-            {{ category_block_settings.block_title|default:"Shop by Category" }}
-        </h3>
-        <a href="{{ category_block_settings.browse_all_link|default:'/catalog/' }}" class="text-dark small fw-semibold text-decoration-none">
-            {{ category_block_settings.browse_all_text|default:"Browse all →" }}
-        </a>
-    </div>
 
-    <div class="row row-cols-2 row-cols-md-5 g-4 justify-content-center">
-        <div class="col">
-            <a href="{% url 'shop:catalog_view' %}" class="category-circle-wrapper">
-                <div class="category-circle d-flex align-items-center justify-content-center text-white bg-dark">
-                    <span class="fs-2">★</span>
-                </div>
-                <div class="category-name">All Products</div>
-                <div class="category-count">Full collection</div>
+    {% if category_block_settings and featured_categories %}
+    <div class="category-block-wrapper mt-5 mb-5">
+
+        <div class="d-flex justify-content-between align-items-center mb-5 px-2">
+            <h2 style="font-family: 'Playfair Display', serif; color: #1E3F35; font-size: 2.2rem; margin: 0; font-weight: 600;">
+                {{ category_block_settings.block_title }}
+            </h2>
+            <a href="{{ category_block_settings.browse_all_link }}" class="text-dark text-decoration-none fw-semibold" style="font-size: 0.95rem;">
+                {{ category_block_settings.browse_all_text }}
             </a>
         </div>
 
-        {% for c in featured_categories %}
-        <div class="col">
-            <a href="{% url 'shop:product_list_by_category' c.slug %}" class="category-circle-wrapper">
+        <div class="d-flex justify-content-center flex-wrap gap-5">
+            {% for c in featured_categories %}
+            <a href="{% url 'shop:product_list_by_category' c.slug %}" class="category-item text-center text-decoration-none" style="width: 170px;">
                 <div class="category-circle">
-                    {% if c.icon_image %}
-                        <img src="{{ c.icon_image.url }}" alt="{{ c.name }}" style="object-position: center {{ c.icon_position }}%;">
+                    {% if c.image %}
+                        <img src="{{ c.image.url }}" alt="{{ c.name }}">
+                    {% elif c.icon_image %}
+                        <img src="{{ c.icon_image.url }}" alt="{{ c.name }}">
                     {% else %}
-                        {% with c.products.all|first as p %}
-                            {% if p and p.image %}
-                                <img src="{{ p.image.url }}" alt="{{ c.name }}" style="object-position: center {{ p.image_position }}%;">
-                            {% else %}
-                                <div class="w-100 h-100 bg-secondary opacity-25" style="background-color: #EFEBE4 !important;"></div>
-                            {% endif %}
-                        {% endwith %}
+                        <span class="d-flex align-items-center justify-content-center h-100 w-100" style="font-family: 'Playfair Display', serif; font-size: 3.5rem; color: #8A847B; background-color: #EFEBE4;">
+                            {{ c.name|first|upper }}
+                        </span>
                     {% endif %}
                 </div>
-                <div class="category-name">{{ c.name }}</div>
-                <div class="category-count">{{ c.products.count }}+ товаров</div>
+                <div class="category-title">{{ c.name }}</div>
+                <div class="category-count">{{ c.products.count }} товаров</div>
             </a>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-</div>
 
-<!-- ================= БЛОК 3: ПРОМО-БАННЕР РАСПРОДАЖИ ================= -->
-{% if promo_banner and promo_banner.is_active %}
-<div class="sale-banner-box promo-{{ promo_banner.banner_size|default:'medium' }} mb-5">
-    <div class="row align-items-center g-0">
-        <div class="col-md-5">
-            <div class="small text-uppercase fw-bold opacity-70 mb-2" style="letter-spacing: 1px;">
-                {{ promo_banner.tag_text }}
-            </div>
-            <h2 class="text-white mb-3" style="font-family: 'Playfair Display', serif;">
-                {{ promo_banner.title }}
-            </h2>
-            <p class="opacity-70 small lh-lg mb-4">
-                {{ promo_banner.description }}
-            </p>
-            <a href="{{ promo_banner.button_link }}" class="btn btn-light rounded-pill px-4 text-uppercase fw-bold" style="font-size: 0.75rem; color: #1E3F35; letter-spacing: 0.5px;">
-                {{ promo_banner.button_text }}
-            </a>
+    </div>
+    {% endif %}
+
+
+    {% if promo_banner %}
+    <div class="promo-banner-box">
+
+        {% if promo_banner.badge_value_text %}
+        <div class="promo-badge-circle">
+            <span style="font-size: 0.75rem; text-transform: uppercase; opacity: 0.9;">{{ promo_banner.badge_up_to_text }}</span>
+            <span style="font-size: 1.7rem; font-weight: 700;">{{ promo_banner.badge_value_text }}</span>
+            <span style="font-size: 0.7rem; opacity: 0.9;">{{ promo_banner.badge_bottom_text }}</span>
         </div>
-        <div class="col-md-3 d-flex justify-content-center py-4">
-            <div class="sale-badge-pink">
-                <span class="small text-uppercase" style="font-size: 0.6rem; letter-spacing: 0.5px;">{{ promo_banner.badge_up_to_text }}</span>
-                <span style="font-size: 1.9rem; font-weight: 800;">{{ promo_banner.badge_value_text }}</span>
-                <span class="small text-uppercase" style="font-size: 0.6rem; letter-spacing: 0.5px;">{{ promo_banner.badge_bottom_text }}</span>
-            </div>
+        {% endif %}
+
+        <div class="promo-left">
+            {% if promo_banner.tag_text %}
+                <span class="promo-tag">{{ promo_banner.tag_text }}</span>
+            {% endif %}
+            <h2 class="promo-title">{{ promo_banner.title }}</h2>
+            {% if promo_banner.description %}
+                <p class="promo-desc">{{ promo_banner.description }}</p>
+            {% endif %}
+            {% if promo_banner.button_text and promo_banner.button_link %}
+                <a href="{{ promo_banner.button_link }}" class="btn-promo">{{ promo_banner.button_text }}</a>
+            {% endif %}
         </div>
-        <div class="col-md-4 d-none d-md-block h-100" style="min-height: 250px; background: url('{% if promo_banner.image %}{{ promo_banner.image.url }}{% else %}https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400{% endif %}') center/cover;">
+
+        <div class="promo-right">
+            {% if promo_banner.image %}
+                <img src="{{ promo_banner.image.url }}" alt="Promo" class="promo-img">
+            {% endif %}
         </div>
     </div>
-</div>
-{% endif %}
+    {% endif %}
 
-<!-- ================= БЛОК 4: ТОП ПРОДАЖ (СТРОГО 5 В РЯД) ================= -->
-{% if featured_section and featured_section.is_active %}
-<div class="lumora-section-bg pad-medium mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="lumora-title m-0" style="font-size: 1.8rem;">
-            {{ featured_section.block_title|default:"Топ продаж" }}
-        </h3>
-        <a href="{{ featured_section.view_all_link|default:'/catalog/' }}" class="text-dark small fw-semibold text-decoration-none">
-            {{ featured_section.view_all_text|default:"View all →" }}
-        </a>
-    </div>
 
-    <!-- Класс row-cols-md-5 возвращает 5 товаров в ряд на дескриптах -->
-    <div class="row row-cols-2 row-cols-md-5 g-3">
-        {% for product in featured_products %}
-        <div class="col">
-            <div class="card lumora-product-card h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="lumora-img-box">
-                        <div class="fav-dot">♡</div>
-                        <a href="{% url 'shop:product_detail' product.slug %}">
+    {% if featured_section and featured_products %}
+    <div class="mt-5 mb-5">
+        <div class="d-flex justify-content-between align-items-end mb-4 px-2">
+            <h2 style="font-family: 'Playfair Display', serif; color: #1E3F35; font-size: 2rem; margin: 0;">{{ featured_section.block_title }}</h2>
+            <a href="{{ featured_section.view_all_link }}" class="text-dark text-decoration-none fw-semibold" style="font-size: 0.9rem;">{{ featured_section.view_all_text }}</a>
+        </div>
+
+        <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-4 px-2">
+            {% for product in featured_products %}
+            <div class="col">
+                <div class="card lumora-product-card h-100 d-flex flex-column text-start">
+
+                    <div class="detail-img-box-related">
+                        <a href="{{ product.get_absolute_url }}">
                             {% if product.image %}
-                                <img src="{{ product.image.url }}" alt="{{ product.name }}" style="object-position: center {{ product.image_position }}%;">
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}">
                             {% endif %}
                         </a>
+                        <button class="koti-fav-btn">♡</button>
                     </div>
-                    <div class="pt-2 px-1">
-                        <div style="font-size: 0.75rem; color: #8A847B; margin-bottom: 2px;">{{ product.category.name }}</div>
-                        <div class="fw-semibold text-dark mb-1" style="font-size: 0.85rem; line-height: 1.2;">{{ product.name }}</div>
-                        <div class="text-muted" style="font-size: 0.85rem;">{{ product.price }} руб.</div>
+
+                    <div class="px-1 d-flex flex-column flex-grow-1">
+                        <div class="text-muted small mb-1" style="font-size: 0.8rem; margin-top: 10px;">{{ product.category.name }}</div>
+
+                        <div class="fw-semibold text-dark mb-2 product-title-clamp" style="font-size: 0.95rem; line-height: 1.4;">
+                            <a href="{{ product.get_absolute_url }}" class="text-dark text-decoration-none">{{ product.name }}</a>
+                        </div>
+
+                        <div class="mt-auto">
+                            <div class="text-muted mb-3" style="font-size: 0.9rem;">{{ product.price }} руб.</div>
+
+                            {% if product.stock > 0 and product.available %}
+                            <form action="{% url 'shop:cart_add' product.id %}" method="post" class="m-0">
+                                {% csrf_token %}
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn w-100 btn-sm rounded-pill py-2 btn-outline-koti" style="font-size: 0.85rem;">
+                                    Добавить в корзину
+                                </button>
+                            </form>
+                            {% else %}
+                                <button type="button" class="btn w-100 btn-sm rounded-pill py-2" style="background-color: transparent; color: #D0C9BE; font-size: 0.85rem; border: none; text-align: center; padding: 0;" disabled>Закончился</button>
+                            {% endif %}
+                        </div>
+
                     </div>
-                </div>
-                <div class="pt-2 px-1">
-                    <form action="{% url 'shop:cart_add' product.id %}" method="post" class="m-0">
-                        {% csrf_token %}
-                        <input type="hidden" name="quantity" value="1">
-                        <button type="submit" class="btn btn-outline-secondary w-100 btn-sm rounded-pill py-1" style="font-size: 0.75rem;">
-                            {{ featured_section.cart_button_text|default:"+ Add to Cart" }}
-                        </button>
-                    </form>
+
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
+    {% endif %}
+
 </div>
-{% endif %}
 {% endblock %}

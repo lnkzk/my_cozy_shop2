@@ -48,11 +48,26 @@
         background-color: #EFEBE4;
         border-radius: 16px;
         overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+    .cart-item-img:hover {
+        transform: scale(1.05); /* Легкое увеличение при наведении на фото */
     }
     .cart-item-img img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+    }
+
+    /* Стили для кликабельного названия */
+    .cart-item-title-link {
+        font-size: 1.05rem;
+        font-weight: 500;
+        color: #2D2D2D;
+        transition: color 0.2s ease;
+    }
+    .cart-item-title-link:hover {
+        color: #8A847B; /* Меняем цвет названия при наведении */
     }
 
     /* Округлая плашка количества */
@@ -127,7 +142,6 @@
             padding: 20px 0;
             position: relative;
         }
-        /* Разносим инфо-блоки по всей ширине строки смартфона */
         .cart-item-row > div:not(.cart-item-img):not(.flex-grow-1) {
             margin: 2px 0 !important;
             width: 100%;
@@ -135,7 +149,6 @@
             justify-content: space-between;
             align-items: center;
         }
-        /* Добавляем текстовые метки на мобилках для понятности */
         .cart-item-row > div:nth-last-child(2)::before {
             content: "Стоимость:";
             font-size: 0.85rem;
@@ -175,16 +188,23 @@
         <div id="cartItemsContainer">
             {% for item in cart %}
             <div class="cart-item-row" id="item-row-{{ item.product.id }}" data-price="{{ item.product.price|stringformat:".2f" }}">
+
+                <!-- ДОБАВЛЕНА ССЫЛКА НА ФОТО -->
                 <div class="cart-item-img me-4">
-                    {% if item.product.image %}
-                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
-                    {% else %}
-                        <img src="{% static 'img/no_image.png' %}" alt="No image">
-                    {% endif %}
+                    <a href="{{ item.product.get_absolute_url }}" style="display: block; width: 100%; height: 100%;">
+                        {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                        {% else %}
+                            <img src="{% static 'img/no_image.png' %}" alt="No image">
+                        {% endif %}
+                    </a>
                 </div>
 
+                <!-- ДОБАВЛЕНА ССЫЛКА НА НАЗВАНИЕ -->
                 <div class="flex-grow-1">
-                    <h5 class="mb-1" style="font-size: 1.05rem; font-weight: 400; color: #2D2D2D;">{{ item.product.name }}</h5>
+                    <a href="{{ item.product.get_absolute_url }}" class="text-decoration-none">
+                        <h5 class="mb-1 cart-item-title-link">{{ item.product.name }}</h5>
+                    </a>
                     <div style="font-size: 0.85rem; color: #8A847B;">{{ item.product.price }} руб.</div>
                 </div>
 

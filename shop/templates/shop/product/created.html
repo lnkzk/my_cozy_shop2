@@ -1,13 +1,105 @@
 {% extends "shop/base.html" %}
-{% block title %}Заказ оформлен!{% endblock %}
+{% load static %}
+
+{% block title %}Спасибо за заказ — {{ header_settings.site_name|default:"KÓTI" }}{% endblock %}
 
 {% block content %}
-<div class="text-center py-5 card shadow-sm col-md-8 mx-auto" style="background-color: #f4f0ea;">
-    <h1 class="display-4 mb-3">🎉 Спасибо за заказ!</h1>
-    <p class="lead text-muted fs-4">Ваш заказ **№{{ order.id }}** успешно принят.</p>
-    <p class="text-secondary">Мы свяжемся с вами по телефону **{{ order.phone }}** в ближайшее время для подтверждения доставки.</p>
-    <div class="mt-4">
-        <a href="{% url 'shop:product_list' %}" class="btn btn-cozy btn-lg px-5">Вернуться на главную</a>
+<style>
+    .thank-you-container {
+        max-width: 600px;
+        margin: 60px auto;
+        background-color: #FFFFFF;
+        border-radius: 24px;
+        padding: 50px 40px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        background-color: #EFEBE4;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        color: #1E3F35;
+        font-size: 40px;
+    }
+    .thank-you-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        color: #1E3F35;
+        margin-bottom: 15px;
+    }
+    .thank-you-text {
+        font-size: 1rem;
+        color: #5A544B;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    .order-details-box {
+        background-color: #F8F5F0;
+        border-radius: 16px;
+        padding: 25px;
+        text-align: left;
+        margin-bottom: 30px;
+    }
+    .order-detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+        border-bottom: 1px dashed #D0C9BE;
+        padding-bottom: 12px;
+    }
+    .order-detail-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .order-detail-label { color: #8A847B; }
+    .order-detail-value { color: #1E3F35; font-weight: 600; text-align: right; max-width: 60%; }
+
+    .btn-return {
+        display: inline-block;
+        background-color: #1E3F35;
+        color: white;
+        border: none;
+        border-radius: 30px;
+        padding: 15px 40px;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 1px;
+        transition: background-color 0.2s;
+        text-decoration: none;
+    }
+    .btn-return:hover { background-color: #152B24; color: white; }
+</style>
+
+<div class="container">
+    <div class="thank-you-container">
+        <div class="success-icon">✓</div>
+        <h1 class="thank-you-title">Спасибо за заказ!</h1>
+        <p class="thank-you-text">Ваш заказ <strong>№{{ order.pk }}</strong> успешно оформлен. Мы уже получили информацию и скоро свяжемся с вами для подтверждения деталей.</p>
+
+        <div class="order-details-box">
+            <div class="order-detail-row">
+                <span class="order-detail-label">Итоговая сумма:</span>
+                <span class="order-detail-value">{{ order.total_price }} руб.</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Доставка:</span>
+                <span class="order-detail-value">{{ order.delivery_method }}</span>
+            </div>
+            <div class="order-detail-row">
+                <span class="order-detail-label">Оплата:</span>
+                <span class="order-detail-value">{{ order.payment_method }}</span>
+            </div>
+        </div>
+
+        <a href="{% url 'shop:product_list' %}" class="btn-return">Вернуться на главную</a>
     </div>
 </div>
 {% endblock %}
